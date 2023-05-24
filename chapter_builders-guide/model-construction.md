@@ -108,6 +108,7 @@ npx.set_np()
 import torch
 from torch import nn
 from torch.nn import functional as F
+import torchinfo
 ```
 
 ```{.python .input}
@@ -377,6 +378,23 @@ We exploit this versatility
 throughout the following chapters,
 such as when addressing
 convolutional neural networks.
+
+Here we demonstrate using torchinfo to inspect the model and the computation cost of each layer.
+
+```{.python .input}
+%%tab pytorch
+torchinfo.summary(net, input_size=X.shape)
+```
+
+By runnning this cell, we can see that the model has 7946 parameters, and the output shape and number of parameter of each layer. Tips of calculating the number of parameters of a specific layer:
+For input X = torch.rand(2, 20) and nn.Linear(20, 256) and output shape at (2, 256), the number of parameter is: (20 + 1) * 256 = 5376 (with bias); the number of mult-adds is 20 * 2 * 256 + (20-1) * 2 * 256 = 19968. Overall, total mult-adds is 0.3 M where M stands for million.
+
+```{.python .input}
+%%tab pytorch
+for name, param in net.named_parameters():
+    print(name, param.dtype)
+```
+As we checked that all the parameters are float32, it is easy to calculate the size of the model as 7946 * 4 / 1024 / 1024 = 0.03 MB. This is because 1 parameter is 4 bytes in float32. 
 
 
 ## [**The Sequential Module**]
