@@ -2,19 +2,19 @@
 :label:`sec_bi_rnn`
 
 So far, our working example of a sequence learning task has been language modeling,
-where we aim to predict the next token given all previous tokens in a sequence. 
+where we aim to predict the next token given all previous tokens in a sequence.
 In this scenario, we wish only to condition upon the leftward context,
-and thus the unidirectional chaining of a standard RNN seems appropriate. 
-However, there are many other sequence learning tasks contexts 
+and thus the unidirectional chaining of a standard RNN seems appropriate.
+However, there are many other sequence learning tasks contexts
 where it is perfectly fine to condition the prediction at every time step
-on both the leftward and the rightward context. 
-Consider, for example, part of speech detection. 
+on both the leftward and the rightward context.
+Consider, for example, part of speech detection.
 Why shouldn't we take the context in both directions into account
 when assessing the part of speech associated with a given word?
 
 Another common task---often useful as a pretraining exercise
 prior to fine-tuning a model on an actual task of interest---is
-to mask out random tokens in a text document and then to train 
+to mask out random tokens in a text document and then to train
 a sequence model to predict the values of the missing tokens.
 Note that depending on what comes after the blank,
 the likely value of the missing token changes dramatically:
@@ -24,24 +24,24 @@ the likely value of the missing token changes dramatically:
 * I am `___` hungry, and I can eat half a pig.
 
 In the first sentence "happy" seems to be a likely candidate.
-The words "not" and "very" seem plausible in the second sentence, 
-but "not" seems incompatible with the third sentences. 
+The words "not" and "very" seem plausible in the second sentence,
+but "not" seems incompatible with the third sentences.
 
 
-Fortunately, a simple technique transforms any unidirectional RNN 
+Fortunately, a simple technique transforms any unidirectional RNN
 into a bidirectional RNN :cite:`Schuster.Paliwal.1997`.
 We simply implement two unidirectional RNN layers
-chained together in opposite directions 
+chained together in opposite directions
 and acting on the same input (:numref:`fig_birnn`).
 For the first RNN layer,
 the first input is $\mathbf{x}_1$
 and the last input is $\mathbf{x}_T$,
-but for the second RNN layer, 
+but for the second RNN layer,
 the first input is $\mathbf{x}_T$
 and the last input is $\mathbf{x}_1$.
 To produce the output of this bidirectional RNN layer,
 we simply concatenate together the corresponding outputs
-of the two underlying unidirectional RNN layers. 
+of the two underlying unidirectional RNN layers.
 
 
 ![Architecture of a bidirectional RNN.](../img/birnn.svg)
@@ -49,12 +49,12 @@ of the two underlying unidirectional RNN layers.
 
 
 Formally for any time step $t$,
-we consider a minibatch input $\mathbf{X}_t \in \mathbb{R}^{n \times d}$ 
-(number of examples: $n$, number of inputs in each example: $d$) 
+we consider a minibatch input $\mathbf{X}_t \in \mathbb{R}^{n \times d}$
+(number of examples $=n$; number of inputs in each example $=d$)
 and let the hidden layer activation function be $\phi$.
 In the bidirectional architecture,
-the forward and backward hidden states for this time step 
-are $\overrightarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$ 
+the forward and backward hidden states for this time step
+are $\overrightarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$
 and $\overleftarrow{\mathbf{H}}_t  \in \mathbb{R}^{n \times h}$, respectively,
 where $h$ is the number of hidden units.
 The forward and backward hidden state updates are as follows:
@@ -62,28 +62,28 @@ The forward and backward hidden state updates are as follows:
 
 $$
 \begin{aligned}
-\overrightarrow{\mathbf{H}}_t &= \phi(\mathbf{X}_t \mathbf{W}_{xh}^{(f)} + \overrightarrow{\mathbf{H}}_{t-1} \mathbf{W}_{hh}^{(f)}  + \mathbf{b}_h^{(f)}),\\
-\overleftarrow{\mathbf{H}}_t &= \phi(\mathbf{X}_t \mathbf{W}_{xh}^{(b)} + \overleftarrow{\mathbf{H}}_{t+1} \mathbf{W}_{hh}^{(b)}  + \mathbf{b}_h^{(b)}),
+\overrightarrow{\mathbf{H}}_t &= \phi(\mathbf{X}_t \mathbf{W}_{\textrm{xh}}^{(f)} + \overrightarrow{\mathbf{H}}_{t-1} \mathbf{W}_{\textrm{hh}}^{(f)}  + \mathbf{b}_\textrm{h}^{(f)}),\\
+\overleftarrow{\mathbf{H}}_t &= \phi(\mathbf{X}_t \mathbf{W}_{\textrm{xh}}^{(b)} + \overleftarrow{\mathbf{H}}_{t+1} \mathbf{W}_{\textrm{hh}}^{(b)}  + \mathbf{b}_\textrm{h}^{(b)}),
 \end{aligned}
 $$
 
-where the weights $\mathbf{W}_{xh}^{(f)} \in \mathbb{R}^{d \times h}, \mathbf{W}_{hh}^{(f)} \in \mathbb{R}^{h \times h}, \mathbf{W}_{xh}^{(b)} \in \mathbb{R}^{d \times h}, \text{ and } \mathbf{W}_{hh}^{(b)} \in \mathbb{R}^{h \times h}$, and biases $\mathbf{b}_h^{(f)} \in \mathbb{R}^{1 \times h}$ and $\mathbf{b}_h^{(b)} \in \mathbb{R}^{1 \times h}$ are all the model parameters.
+where the weights $\mathbf{W}_{\textrm{xh}}^{(f)} \in \mathbb{R}^{d \times h}, \mathbf{W}_{\textrm{hh}}^{(f)} \in \mathbb{R}^{h \times h}, \mathbf{W}_{\textrm{xh}}^{(b)} \in \mathbb{R}^{d \times h}, \textrm{ and } \mathbf{W}_{\textrm{hh}}^{(b)} \in \mathbb{R}^{h \times h}$, and the biases $\mathbf{b}_\textrm{h}^{(f)} \in \mathbb{R}^{1 \times h}$ and $\mathbf{b}_\textrm{h}^{(b)} \in \mathbb{R}^{1 \times h}$ are all the model parameters.
 
 Next, we concatenate the forward and backward hidden states
 $\overrightarrow{\mathbf{H}}_t$ and $\overleftarrow{\mathbf{H}}_t$
-to obtain the hidden state $\mathbf{H}_t \in \mathbb{R}^{n \times 2h}$ to be fed into the output layer.
+to obtain the hidden state $\mathbf{H}_t \in \mathbb{R}^{n \times 2h}$ for feeding into the output layer.
 In deep bidirectional RNNs with multiple hidden layers,
-such information is passed on as *input* to the next bidirectional layer. 
-Last, the output layer computes the output 
-$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ (number of outputs: $q$):
+such information is passed on as *input* to the next bidirectional layer.
+Last, the output layer computes the output
+$\mathbf{O}_t \in \mathbb{R}^{n \times q}$ (number of outputs $=q$):
 
-$$\mathbf{O}_t = \mathbf{H}_t \mathbf{W}_{hq} + \mathbf{b}_q.$$
+$$\mathbf{O}_t = \mathbf{H}_t \mathbf{W}_{\textrm{hq}} + \mathbf{b}_\textrm{q}.$$
 
-Here, the weight matrix $\mathbf{W}_{hq} \in \mathbb{R}^{2h \times q}$ 
-and the bias $\mathbf{b}_q \in \mathbb{R}^{1 \times q}$ 
-are the model parameters of the output layer. 
+Here, the weight matrix $\mathbf{W}_{\textrm{hq}} \in \mathbb{R}^{2h \times q}$
+and the bias $\mathbf{b}_\textrm{q} \in \mathbb{R}^{1 \times q}$
+are the model parameters of the output layer.
 While technically, the two directions can have different numbers of hidden units,
-this design choice is seldom made in practice. 
+this design choice is seldom made in practice.
 We now demonstrate a simple implementation of a bidirectional RNN.
 
 ```{.python .input}
@@ -120,7 +120,7 @@ from jax import numpy as jnp
 
 ## Implementation from Scratch
 
-To implement a bidirectional RNN from scratch, we can
+If we want to implement a bidirectional RNN from scratch, we can
 include two unidirectional `RNNScratch` instances
 with separate learnable parameters.
 
@@ -200,7 +200,7 @@ In bidirectional RNNs, the hidden state for each time step is simultaneously det
 
 1. If the different directions use a different number of hidden units, how will the shape of $\mathbf{H}_t$ change?
 1. Design a bidirectional RNN with multiple hidden layers.
-1. Polysemy is common in natural languages. For example, the word "bank" has different meanings in contexts “i went to the bank to deposit cash” and “i went to the bank to sit down”. How can we design a neural network model such that given a context sequence and a word, a vector representation of the word in the context will be returned? What type of neural architectures is preferred for handling polysemy?
+1. Polysemy is common in natural languages. For example, the word "bank" has different meanings in contexts “i went to the bank to deposit cash” and “i went to the bank to sit down”. How can we design a neural network model such that given a context sequence and a word, a vector representation of the word in the correct context will be returned? What type of neural architectures is preferred for handling polysemy?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/339)
@@ -208,4 +208,8 @@ In bidirectional RNNs, the hidden state for each time step is simultaneously det
 
 :begin_tab:`pytorch`
 [Discussions](https://discuss.d2l.ai/t/1059)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/18019)
 :end_tab:
